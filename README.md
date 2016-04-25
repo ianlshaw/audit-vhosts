@@ -23,5 +23,5 @@ Total vhosts: 61
 Total errors: 92  
 Total successes: 89  
 Defunkt vhosts: 25  
-Required vhosts: 36  
+
 ----------
