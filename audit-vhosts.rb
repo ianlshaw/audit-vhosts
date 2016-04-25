@@ -2,13 +2,11 @@
 # audit-vhosts.rb
 # Author: ianlshaw
 
-# Concurrent dns queries with: Resolv, this will need some thinking, I don't think
-# it runs on 1.8.7........... rvm hmmmmmmmmmmm
+# Concurrent dns queries with: Resolv, this will need some thinking
+# I don't think it runs on 1.8.7........... rvm hmmmmmmmmmmm
 
-# Attempt to resolve servernames.
-
-# Captures null responses from dig as errors, they return a 0 but a response with
-# length of 0 should be considered an error.
+# Captures null responses from dig as errors, they return a 0 but
+# a response with length of 0 should be considered an error.
 
 require 'rubygems'
 require 'open-uri'
@@ -41,10 +39,10 @@ BREAK = '----------'
 def find_vhosts
   puts 'Finding vhosts.'
 
-  # Create an array of filenames from the vhost directory, but reject the up and up up directory constructs, since they will bomb out.
-  # This breaks on directories.
-  @vhost_names = Dir.entries(VHOSTDIR).reject{ |entry| entry == '.' || entry == '..' }
-  
+  # Create an array of filenames from the vhost directory but
+  # reject the up and up up directory constructs, since they will bomb out.
+  @vhost_names = Dir.entries(VHOSTDIR).reject { |entry| entry == '.' || entry == '..' }
+
   # Provide a count of elements in the Array.
   @count = @vhost_names.length
 end
@@ -54,18 +52,19 @@ def grab_urls
 
   # For every vhost found...
   @vhost_names.each do |vhost|
-
     # Create an absolute filepath
     filename = VHOSTDIR + vhost
 
     # Then read the contents of the file into a variable.
     file = IO.read(filename)
 
-    # Grab out the lines we care about, the ones containing urls which are listened on.
+    # Grab out the lines we care about, the ones
+    # containing urls which are listened on.
     servernames = file.grep(/ServerName/)
     serveraliases = file.grep(/ServerAlias/)
 
-    # Count how many aliases contain asterixes, they'll be removed from the array, but we need the count.
+    # Count how many aliases contain asterixes,
+    # they'll be removed from the array, but we need the count.
     asterixes = serveraliases.grep(/\*/)
     asterix_count = asterixes.length
 
@@ -83,22 +82,25 @@ def grab_urls
     puts asterix_count.to_s + ' removed due to asterisk bullshit.'
     puts 'ServerAliases'.yellow
 
+    # Firstly, we check the ServerName.
+    test_url(prettyname)
+
     # Sanitize the array by removing any lines containing an asterix.
     aliases_minus_asterix = serveraliases.reject { |s| /\*/ =~ s }
 
     # Loop through the alias array.
     aliases_minus_asterix.each do |line|
-
       # Truncate the directive.
       singlealias = line.split.last
       puts singlealias
 
-      # This is where we have each Alias alone, so we should dig here.
+      # Next we check each alias, one by one.
       test_url(singlealias)
     end
 
     # If the amount of errors in this vhost is equal to the amout of aliases...
-    if @per_vhost_errors == aliases_minus_asterix.length
+    # + 1 because of ServerName
+    if @per_vhost_errors == aliases_minus_asterix.length + 1
 
       # Add the vhost as a string to the defunkt_vhosts array
       @defunkt_vhosts.push(vhost)
@@ -110,7 +112,7 @@ def grab_urls
     end
 
     # While we test
-    puts "vhost error count ".red + @per_vhost_errors.to_s
+    puts 'vhost error count '.red + @per_vhost_errors.to_s
 
     # Reset the local error count.
     @per_vhost_errors = 0
@@ -121,14 +123,14 @@ def grab_urls
   end
 end
 
-# Ascertain the public IP of the machine on which the script is run. This allows it to be node-agnostic.
+# Ascertain the public IP of the machine on which
+# the script is run. This allows it to be node-agnostic.
 def find_public_ip
   @public_ip = open('http://whatismyip.akamai.com').read
 end
 
 # Finally, we get to shell out.
 def test_url(url)
-
   # Attempt to resolve the name or alias.
   # Query external nameserver, on non-default port (Thanks RackSpace!)
   raw_output = `dig @208.67.222.222 +short -p 5353 #{url}`
@@ -156,7 +158,7 @@ def test_url(url)
       # Increment the success count
       @successes += 1
 
-      #/Add the url to the array of successes.
+      # Add the url to the array of successes.
       @success_list.push(url)
     end
 
@@ -169,21 +171,21 @@ end
 
 def outro
   # Informed user, yay!
-  puts "Failures: ".red
+  puts 'Failures: '.red
   puts BREAK.red
   puts @error_list
   puts BREAK.red
-  puts "Successes: ".green
+  puts 'Successes: '.green
   puts BREAK.green
   puts @success_list
   puts BREAK.green
   puts
-  puts "Defunkt vhosts:".red
+  puts 'Defunkt vhosts:'.red
   puts BREAK.red
   puts @defunkt_vhosts
   puts BREAK.red
   puts
-  puts "Required vhosts:".green
+  puts 'Required vhosts:'.green
   puts BREAK.green
   puts @required_vhosts
   puts BREAK.green
@@ -192,9 +194,12 @@ def outro
   puts "Total vhosts: #{@count}".light_blue
   puts "Total errors: #{@errors}".red
   puts "Total successes: #{@successes}".green
+  puts "Defunkt vhosts: #{@defunkt_vhosts.length}".red
+  puts "Required vhosts: #{@required_vhosts.length}".green
   puts BREAK.light_blue
 end
 
+find_public_ip
 find_vhosts
 grab_urls
 outro
