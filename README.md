@@ -19,11 +19,9 @@ It will also spit out output to that end, allowing detailed analysis of superflu
 
 ##### Example final output:
 ----------
-Total vhosts: 61
-
-Total errors: 92
-
-Total successes: 89
-Defunkt vhosts: 25
-Required vhosts: 36
+Total vhosts: 61  
+Total errors: 92  
+Total successes: 89  
+Defunkt vhosts: 25  
+Required vhosts: 36  
 ----------
